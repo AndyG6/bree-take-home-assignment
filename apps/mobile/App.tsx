@@ -55,7 +55,13 @@ export default function App() {
       )}
 
       {screen === "result" && (
-        <ResultScreen user={user} onStartOver={() => navigate("landing")} />
+        <ResultScreen
+          user={user}
+          onStartOver={() => navigate("landing")}
+          onEnterApp={() => {
+            // Placeholder — will navigate to main app home screen
+          }}
+        />
       )}
     </>
   );

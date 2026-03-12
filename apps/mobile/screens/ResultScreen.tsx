@@ -13,9 +13,10 @@ import { DemoUser } from "../data/testData";
 interface Props {
   user: DemoUser;
   onStartOver: () => void;
+  onEnterApp?: () => void;
 }
 
-function ApprovedScreen({ user, onStartOver }: Props) {
+function ApprovedScreen({ user, onStartOver, onEnterApp }: Props) {
   const scaleAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -229,11 +230,15 @@ function ApprovedScreen({ user, onStartOver }: Props) {
 
         <TouchableOpacity
           activeOpacity={0.85}
+          onPress={onEnterApp}
           style={{
             backgroundColor: "#22c55e",
             borderRadius: 16,
             paddingVertical: 18,
+            paddingHorizontal: 24,
+            flexDirection: "row",
             alignItems: "center",
+            justifyContent: "center",
             width: "100%",
             marginBottom: 16,
             shadowColor: "#22c55e",
@@ -243,9 +248,10 @@ function ApprovedScreen({ user, onStartOver }: Props) {
             elevation: 4,
           }}
         >
-          <Text style={{ color: "#fff", fontSize: 17, fontWeight: "600" }}>
+          <Text style={{ color: "#fff", fontSize: 17, fontWeight: "600", marginRight: 8 }}>
             View my account
           </Text>
+          <Text style={{ color: "#fff", fontSize: 20, fontWeight: "700" }}>→</Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={onStartOver}>
@@ -458,9 +464,9 @@ function DeniedScreen({ user, onStartOver }: Props) {
   );
 }
 
-export default function ResultScreen({ user, onStartOver }: Props) {
+export default function ResultScreen({ user, onStartOver, onEnterApp }: Props) {
   if (user.decision === "approved") {
-    return <ApprovedScreen user={user} onStartOver={onStartOver} />;
+    return <ApprovedScreen user={user} onStartOver={onStartOver} onEnterApp={onEnterApp} />;
   }
   return <DeniedScreen user={user} onStartOver={onStartOver} />;
 }
