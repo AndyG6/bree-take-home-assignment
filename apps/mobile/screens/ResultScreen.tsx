@@ -5,6 +5,7 @@ import {
   SafeAreaView,
   ScrollView,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -383,9 +384,15 @@ function FlaggedScreen({ user, onStartOver, onEnterApp }: Props) {
   );
 }
 
+function cleanDocName(raw: string): string {
+  return raw.replace("_strong", "").replace("_weak", "").replace("_healthy", "").replace("_risky", "");
+}
+
 function DeniedScreen({ user, onStartOver }: Props) {
   const scaleAnim = useRef(new Animated.Value(0)).current;
-  const [showAppeal, setShowAppeal] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [appealAmount, setAppealAmount] = useState(String(user.loanAmount));
+  const [contextText, setContextText] = useState("");
 
   useEffect(() => {
     Animated.spring(scaleAnim, {
@@ -407,8 +414,8 @@ function DeniedScreen({ user, onStartOver }: Props) {
           paddingBottom: 40,
         }}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        {/* Icon */}
         <Animated.View
           style={{
             transform: [{ scale: scaleAnim }],
@@ -424,28 +431,12 @@ function DeniedScreen({ user, onStartOver }: Props) {
           <Text style={{ fontSize: 44, color: "#475569" }}>✉️</Text>
         </Animated.View>
 
-        <Text
-          style={{
-            fontSize: 26,
-            fontWeight: "800",
-            color: "#0f172a",
-            textAlign: "center",
-            marginBottom: 12,
-          }}
-        >
+        <Text style={{ fontSize: 26, fontWeight: "800", color: "#0f172a", textAlign: "center", marginBottom: 12 }}>
           Thank you for applying, {user.firstName}
         </Text>
-        <Text
-          style={{
-            fontSize: 16,
-            color: "#475569",
-            textAlign: "center",
-            lineHeight: 24,
-            marginBottom: 32,
-          }}
-        >
-          After reviewing your application, we're unable to offer you a credit
-          line at this time.
+        <Text style={{ fontSize: 16, color: "#475569", textAlign: "center", lineHeight: 24, marginBottom: 32 }}>
+          Based on the information and documents you provided, we're unable to
+          offer you a credit line at this time.
         </Text>
 
         {/* What this means */}
@@ -467,12 +458,11 @@ function DeniedScreen({ user, onStartOver }: Props) {
             What this means
           </Text>
           <Text style={{ fontSize: 14, color: "#475569", lineHeight: 22 }}>
-            This decision is based on the information and documents you provided.
-            It doesn't affect your credit score.
+            This decision doesn't affect your credit score.
           </Text>
         </View>
 
-        {/* Appeal card */}
+        {/* Appeal card — inline expansion */}
         <View
           style={{
             backgroundColor: "#fff",
@@ -491,34 +481,129 @@ function DeniedScreen({ user, onStartOver }: Props) {
             Think something was missed?
           </Text>
           <Text style={{ fontSize: 14, color: "#475569", lineHeight: 22, marginBottom: 16 }}>
-            If your documents have changed, you'd like to request a lower amount, or there's context the system couldn't capture — you can submit an appeal. Most appeals are reviewed within 1–2 business days.
-          </Text>
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => setShowAppeal(true)}
-            style={{
-              backgroundColor: "#0f172a",
-              borderRadius: 14,
-              paddingVertical: 16,
-              alignItems: "center",
-            }}
-          >
-            <Text style={{ color: "#fff", fontSize: 15, fontWeight: "700" }}>
-              Appeal this decision
+            If your documents have changed, or there's context the system couldn't capture, you can submit an appeal.{" "}
+            <Text>
+              Requesting a lower amount can also improve your chances. Many applicants are approved on a second look with an adjusted request.
             </Text>
-          </TouchableOpacity>
+            {" "}Most appeals are reviewed within 1–2 business days.
+          </Text>
+
+          {!expanded && (
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => setExpanded(true)}
+              style={{ backgroundColor: "#0f172a", borderRadius: 14, paddingVertical: 16, alignItems: "center" }}
+            >
+              <Text style={{ color: "#fff", fontSize: 15, fontWeight: "700" }}>Appeal this decision</Text>
+            </TouchableOpacity>
+          )}
+
+          {expanded && (
+            <View>
+              <View style={{ height: 1, backgroundColor: "#e2e8f0", marginBottom: 18 }} />
+
+              {/* Amount adjuster */}
+              <Text style={{ fontSize: 12, fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 6 }}>
+                Requested amount
+              </Text>
+              <Text style={{ fontSize: 12, color: "#94a3b8", marginBottom: 10 }}>
+                Original request: ${user.loanAmount.toLocaleString()}
+              </Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  borderWidth: 1.5,
+                  borderColor: "#3b82f6",
+                  borderRadius: 12,
+                  paddingHorizontal: 14,
+                  paddingVertical: 12,
+                  marginBottom: 20,
+                }}
+              >
+                <Text style={{ fontSize: 18, fontWeight: "700", color: "#64748b", marginRight: 4 }}>$</Text>
+                <TextInput
+                  value={appealAmount}
+                  onChangeText={setAppealAmount}
+                  keyboardType="numeric"
+                  style={{ flex: 1, fontSize: 18, fontWeight: "700", color: "#0f172a" }}
+                />
+              </View>
+
+              {/* Documents */}
+              <Text style={{ fontSize: 12, fontWeight: "700", color: "#64748b", textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 10 }}>
+                Documents on file
+              </Text>
+              {user.documents.length === 0 ? (
+                <Text style={{ fontSize: 13, color: "#94a3b8", marginBottom: 16 }}>No documents submitted</Text>
+              ) : (
+                <View style={{ gap: 8, marginBottom: 20 }}>
+                  {user.documents.map((doc) => (
+                    <View
+                      key={doc}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        backgroundColor: "#f8fafc",
+                        borderRadius: 10,
+                        padding: 12,
+                        borderWidth: 1,
+                        borderColor: "#e2e8f0",
+                      }}
+                    >
+                      <Text style={{ fontSize: 16, marginRight: 10 }}>📄</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ fontSize: 13, fontWeight: "600", color: "#0f172a" }} numberOfLines={1}>
+                          {cleanDocName(doc)}
+                        </Text>
+                        <Text style={{ fontSize: 11, color: "#94a3b8", marginTop: 1 }}>Uploaded Jan 15, 2026</Text>
+                      </View>
+                      <TouchableOpacity activeOpacity={0.7}>
+                        <Text style={{ fontSize: 13, color: "#3b82f6", fontWeight: "600" }}>Replace</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {/* Optional context */}
+              <TextInput
+                value={contextText}
+                onChangeText={setContextText}
+                placeholder="Anything else you'd like us to know? (optional)"
+                placeholderTextColor="#94a3b8"
+                multiline
+                style={{
+                  borderWidth: 1.5,
+                  borderColor: contextText.length > 0 ? "#3b82f6" : "#e2e8f0",
+                  borderRadius: 12,
+                  padding: 12,
+                  fontSize: 14,
+                  color: "#0f172a",
+                  lineHeight: 20,
+                  minHeight: 72,
+                  textAlignVertical: "top",
+                  marginBottom: 16,
+                }}
+              />
+
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={{ backgroundColor: "#0f172a", borderRadius: 14, paddingVertical: 16, alignItems: "center", marginBottom: 12 }}
+              >
+                <Text style={{ color: "#fff", fontSize: 15, fontWeight: "700" }}>Submit appeal</Text>
+              </TouchableOpacity>
+              <TouchableOpacity activeOpacity={0.7} onPress={() => setExpanded(false)} style={{ alignItems: "center" }}>
+                <Text style={{ fontSize: 13, color: "#94a3b8" }}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
         <TouchableOpacity onPress={onStartOver}>
           <Text style={{ fontSize: 14, color: "#64748b" }}>← Back to demo</Text>
         </TouchableOpacity>
       </ScrollView>
-
-      <AppealScreen
-        visible={showAppeal}
-        user={user}
-        onClose={() => setShowAppeal(false)}
-      />
     </SafeAreaView>
   );
 }
