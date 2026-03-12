@@ -1,25 +1,70 @@
 import React, { useState } from "react";
 import { StatusBar } from "expo-status-bar";
-import { DEMO_USERS } from "./data/testData";
+import { View } from "react-native";
+import { DEMO_USERS, DemoUserKey } from "./data/testData";
 import LandingScreen from "./screens/LandingScreen";
 import PersonalInfoScreen from "./screens/PersonalInfoScreen";
 import DocumentUploadScreen from "./screens/DocumentUploadScreen";
 import ProcessingScreen from "./screens/ProcessingScreen";
 import ResultScreen from "./screens/ResultScreen";
+import BottomNav, { TabName } from "./components/BottomNav";
+import HomeScreen from "./screens/main/HomeScreen";
+import PlaceholderScreen from "./screens/main/PlaceholderScreen";
+import SettingsScreen from "./screens/main/SettingsScreen";
 
-type Screen =
+type OnboardingScreen =
   | "landing"
   | "personal-info"
   | "document-upload"
   | "processing"
   | "result";
 
+function MainAppShell({
+  selectedUser,
+  setSelectedUser,
+}: {
+  selectedUser: DemoUserKey;
+  setSelectedUser: (key: DemoUserKey) => void;
+}) {
+  const [activeTab, setActiveTab] = useState<TabName>("home");
+  const user = DEMO_USERS[selectedUser];
+
+  return (
+    <View style={{ flex: 1 }}>
+      <View style={{ flex: 1 }}>
+        {activeTab === "home" && <HomeScreen user={user} />}
+        {activeTab === "activity" && <PlaceholderScreen title="Activity" />}
+        {activeTab === "insights" && <PlaceholderScreen title="Insights" />}
+        {activeTab === "earn" && <PlaceholderScreen title="Earn" />}
+        {activeTab === "settings" && (
+          <SettingsScreen
+            user={user}
+            selectedUserKey={selectedUser}
+            onSwitchUser={setSelectedUser}
+          />
+        )}
+      </View>
+      <BottomNav activeTab={activeTab} onSelectTab={setActiveTab} />
+    </View>
+  );
+}
+
 export default function App() {
-  const [screen, setScreen] = useState<Screen>("landing");
-  const [selectedUser, setSelectedUser] = useState<"jane" | "bob">("jane");
+  const [appPhase, setAppPhase] = useState<"onboarding" | "mainApp">("onboarding");
+  const [screen, setScreen] = useState<OnboardingScreen>("landing");
+  const [selectedUser, setSelectedUser] = useState<DemoUserKey>("jane");
 
   const user = DEMO_USERS[selectedUser];
-  const navigate = (s: Screen) => setScreen(s);
+  const navigate = (s: OnboardingScreen) => setScreen(s);
+
+  if (appPhase === "mainApp") {
+    return (
+      <>
+        <StatusBar style="dark" />
+        <MainAppShell selectedUser={selectedUser} setSelectedUser={setSelectedUser} />
+      </>
+    );
+  }
 
   return (
     <>
@@ -58,9 +103,7 @@ export default function App() {
         <ResultScreen
           user={user}
           onStartOver={() => navigate("landing")}
-          onEnterApp={() => {
-            // Placeholder — will navigate to main app home screen
-          }}
+          onEnterApp={() => setAppPhase("mainApp")}
         />
       )}
     </>

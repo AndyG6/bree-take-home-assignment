@@ -6,13 +6,20 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { DemoUserKey } from "../data/testData";
 
 interface Props {
-  selectedUser: "jane" | "bob";
-  onSelectUser: (user: "jane" | "bob") => void;
+  selectedUser: DemoUserKey;
+  onSelectUser: (user: DemoUserKey) => void;
   onSignUp: () => void;
   onLogin: () => void;
 }
+
+const DEMO_PILLS: { key: DemoUserKey; name: string; sub: string }[] = [
+  { key: "jane", name: "Jane Doe", sub: "$1,500 · Auto-approved" },
+  { key: "bob", name: "Bob Smith", sub: "$2,000 · Auto-denied" },
+  { key: "bob_flagged", name: "Bob Smith", sub: "$300 · Flagged" },
+];
 
 export default function LandingScreen({
   selectedUser,
@@ -70,7 +77,7 @@ export default function LandingScreen({
         <Image
           source={require("../assets/welcome-birds.png")}
           resizeMode="contain"
-          style={{ width: "80%", height: 240 }}
+          style={{ width: "80%", height: 200 }}
         />
       </View>
 
@@ -95,72 +102,47 @@ export default function LandingScreen({
         >
           Demo scenario
         </Text>
-        <View style={{ flexDirection: "row", gap: 10 }}>
-          <TouchableOpacity
-            onPress={() => onSelectUser("jane")}
-            style={{
-              flex: 1,
-              borderRadius: 12,
-              paddingVertical: 10,
-              paddingHorizontal: 12,
-              backgroundColor: selectedUser === "jane" ? "#3b82f6" : "#fff",
-              borderWidth: 1.5,
-              borderColor: selectedUser === "jane" ? "#3b82f6" : "#cbd5e1",
-              alignItems: "center",
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 13,
-                fontWeight: "700",
-                color: selectedUser === "jane" ? "#fff" : "#374151",
-              }}
-            >
-              Jane Doe
-            </Text>
-            <Text
-              style={{
-                fontSize: 11,
-                color: selectedUser === "jane" ? "#bfdbfe" : "#94a3b8",
-                marginTop: 2,
-              }}
-            >
-              $1,500 · Auto-approved
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => onSelectUser("bob")}
-            style={{
-              flex: 1,
-              borderRadius: 12,
-              paddingVertical: 10,
-              paddingHorizontal: 12,
-              backgroundColor: selectedUser === "bob" ? "#3b82f6" : "#fff",
-              borderWidth: 1.5,
-              borderColor: selectedUser === "bob" ? "#3b82f6" : "#cbd5e1",
-              alignItems: "center",
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 13,
-                fontWeight: "700",
-                color: selectedUser === "bob" ? "#fff" : "#374151",
-              }}
-            >
-              Bob Smith
-            </Text>
-            <Text
-              style={{
-                fontSize: 11,
-                color: selectedUser === "bob" ? "#bfdbfe" : "#94a3b8",
-                marginTop: 2,
-              }}
-            >
-              $2,000 · Auto-denied
-            </Text>
-          </TouchableOpacity>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          {DEMO_PILLS.map((pill) => {
+            const active = selectedUser === pill.key;
+            return (
+              <TouchableOpacity
+                key={pill.key}
+                onPress={() => onSelectUser(pill.key)}
+                style={{
+                  flex: 1,
+                  borderRadius: 12,
+                  paddingVertical: 10,
+                  paddingHorizontal: 8,
+                  backgroundColor: active ? "#3b82f6" : "#fff",
+                  borderWidth: 1.5,
+                  borderColor: active ? "#3b82f6" : "#cbd5e1",
+                  alignItems: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: "700",
+                    color: active ? "#fff" : "#374151",
+                    textAlign: "center",
+                  }}
+                >
+                  {pill.name}
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 10,
+                    color: active ? "#bfdbfe" : "#94a3b8",
+                    marginTop: 2,
+                    textAlign: "center",
+                  }}
+                >
+                  {pill.sub}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
 

@@ -264,7 +264,125 @@ function ApprovedScreen({ user, onStartOver, onEnterApp }: Props) {
   );
 }
 
-function DeniedScreen({ user, onStartOver }: Props) {
+function FlaggedScreen({ user, onStartOver, onEnterApp }: Props) {
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      friction: 5,
+      tension: 80,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fffbeb" }}>
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          alignItems: "center",
+          paddingHorizontal: 24,
+          paddingTop: 48,
+          paddingBottom: 40,
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        <Animated.View
+          style={{
+            transform: [{ scale: scaleAnim }],
+            width: 100,
+            height: 100,
+            borderRadius: 50,
+            backgroundColor: "#fef3c7",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: 28,
+          }}
+        >
+          <Text style={{ fontSize: 44 }}>🔍</Text>
+        </Animated.View>
+
+        <Text
+          style={{
+            fontSize: 26,
+            fontWeight: "800",
+            color: "#0f172a",
+            textAlign: "center",
+            marginBottom: 12,
+          }}
+        >
+          Under Review, {user.firstName}
+        </Text>
+        <Text
+          style={{
+            fontSize: 16,
+            color: "#475569",
+            textAlign: "center",
+            lineHeight: 24,
+            marginBottom: 32,
+          }}
+        >
+          Your application has been flagged for manual review. This usually takes about 10 minutes.
+        </Text>
+
+        <View
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: 20,
+            padding: 22,
+            width: "100%",
+            marginBottom: 32,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.06,
+            shadowRadius: 8,
+            elevation: 3,
+          }}
+        >
+          <Text style={{ fontSize: 15, fontWeight: "700", color: "#0f172a", marginBottom: 10 }}>
+            What happens next
+          </Text>
+          <Text style={{ fontSize: 14, color: "#475569", lineHeight: 22 }}>
+            Our team is reviewing your documents. You'll receive a decision shortly. You may upload additional documents to speed up the process.
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={onEnterApp}
+          style={{
+            backgroundColor: "#f59e0b",
+            borderRadius: 16,
+            paddingVertical: 18,
+            paddingHorizontal: 24,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "100%",
+            marginBottom: 16,
+            shadowColor: "#f59e0b",
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: 0.3,
+            shadowRadius: 12,
+            elevation: 4,
+          }}
+        >
+          <Text style={{ color: "#fff", fontSize: 17, fontWeight: "600", marginRight: 8 }}>
+            View my account
+          </Text>
+          <Text style={{ color: "#fff", fontSize: 20, fontWeight: "700" }}>→</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={onStartOver}>
+          <Text style={{ fontSize: 14, color: "#64748b" }}>← Back to demo</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function DeniedScreen({ user, onStartOver, onEnterApp }: Props) {
   const scaleAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -454,6 +572,27 @@ function DeniedScreen({ user, onStartOver }: Props) {
           </Text>
         </TouchableOpacity>
 
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={onEnterApp}
+          style={{
+            backgroundColor: "#475569",
+            borderRadius: 16,
+            paddingVertical: 18,
+            paddingHorizontal: 24,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "100%",
+            marginBottom: 16,
+          }}
+        >
+          <Text style={{ color: "#fff", fontSize: 17, fontWeight: "600", marginRight: 8 }}>
+            View my account
+          </Text>
+          <Text style={{ color: "#fff", fontSize: 20, fontWeight: "700" }}>→</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity onPress={onStartOver}>
           <Text style={{ fontSize: 14, color: "#64748b" }}>
             ← Back to demo
@@ -468,5 +607,8 @@ export default function ResultScreen({ user, onStartOver, onEnterApp }: Props) {
   if (user.decision === "approved") {
     return <ApprovedScreen user={user} onStartOver={onStartOver} onEnterApp={onEnterApp} />;
   }
-  return <DeniedScreen user={user} onStartOver={onStartOver} />;
+  if (user.decision === "flagged_for_review") {
+    return <FlaggedScreen user={user} onStartOver={onStartOver} onEnterApp={onEnterApp} />;
+  }
+  return <DeniedScreen user={user} onStartOver={onStartOver} onEnterApp={onEnterApp} />;
 }

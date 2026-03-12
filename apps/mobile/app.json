@@ -3,18 +3,16 @@
     "name": "Bree Mobile",
     "slug": "bree-mobile",
     "version": "1.0.0",
-    "sdkVersion": "55.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#020617"
+      "backgroundColor": "#cce3f5"
     },
     "updates": {
-      "enabled": true,
-      "fallbackToCacheTimeout": 0
+      "enabled": false
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
@@ -23,12 +21,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#020617"
-      }
-    },
-    "extra": {
-      "eas": {
-        "projectId": "replace-with-your-project-id"
+        "backgroundColor": "#cce3f5"
       }
     }
   }

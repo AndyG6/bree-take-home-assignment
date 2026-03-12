@@ -1,5 +1,6 @@
 export type Decision = "approved" | "denied" | "flagged_for_review";
 export type EmploymentStatus = "employed" | "self-employed" | "unemployed";
+export type DemoUserKey = "jane" | "bob" | "bob_flagged";
 
 export interface DemoUser {
   id: string;
@@ -13,7 +14,7 @@ export interface DemoUser {
   decision: Decision;
 }
 
-export const DEMO_USERS: Record<"jane" | "bob", DemoUser> = {
+export const DEMO_USERS: Record<DemoUserKey, DemoUser> = {
   jane: {
     id: "app-001",
     name: "Jane Doe",
@@ -35,5 +36,16 @@ export const DEMO_USERS: Record<"jane" | "bob", DemoUser> = {
     employmentStatus: "self-employed",
     documents: ["pay_stub_weak.pdf", "bank_statement_risky.pdf"],
     decision: "denied",
+  },
+  bob_flagged: {
+    id: "app-003",
+    name: "Bob Smith",
+    firstName: "Bob",
+    email: "bob.smith@example.com",
+    loanAmount: 300,
+    monthlyIncome: 1400,
+    employmentStatus: "self-employed",
+    documents: ["pay_stub_weak.pdf", "bank_statement_risky.pdf"],
+    decision: "flagged_for_review",
   },
 };
