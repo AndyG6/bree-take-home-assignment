@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { Image, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { DemoUser } from "../../data/testData";
+import ReviewDetailsScreen from "./ReviewDetailsScreen";
 
 interface Props {
   user: DemoUser;
@@ -162,7 +163,70 @@ function DeniedCard() {
   );
 }
 
-function FlaggedCard() {
+const TRACKER_STEPS = [
+  { label: "Application Received", state: "done" as const },
+  { label: "Under Review", state: "active" as const },
+  { label: "Decision Ready", state: "upcoming" as const },
+];
+
+function VerticalTracker() {
+  return (
+    <View style={{ marginBottom: 12 }}>
+      {TRACKER_STEPS.map((step, i) => {
+        const isDone = step.state === "done";
+        const isActive = step.state === "active";
+        const isLast = i === TRACKER_STEPS.length - 1;
+        const dotBg = isDone ? "#22c55e" : isActive ? "#3b82f6" : "#e2e8f0";
+        const labelColor = isActive ? "#0f172a" : isDone ? "#22c55e" : "#94a3b8";
+        const labelWeight = isActive ? "700" : "500";
+
+        return (
+          <View key={step.label} style={{ flexDirection: "row", alignItems: "flex-start" }}>
+            {/* Dot + line column */}
+            <View style={{ alignItems: "center", width: 20, marginRight: 12 }}>
+              <View
+                style={{
+                  width: 14,
+                  height: 14,
+                  borderRadius: 7,
+                  backgroundColor: dotBg,
+                  marginTop: 3,
+                }}
+              />
+              {!isLast && (
+                <View
+                  style={{
+                    width: 2,
+                    flex: 1,
+                    minHeight: 22,
+                    backgroundColor: isDone ? "#22c55e" : "#e2e8f0",
+                    marginTop: 3,
+                    marginBottom: 3,
+                  }}
+                />
+              )}
+            </View>
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: labelWeight,
+                color: labelColor,
+                paddingBottom: isLast ? 0 : 20,
+                lineHeight: 20,
+              }}
+            >
+              {step.label}
+            </Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function FlaggedCard({ onSeeFullDetails }: { onSeeFullDetails: () => void }) {
+  const [expanded, setExpanded] = useState(false);
+
   return (
     <View
       style={{
@@ -180,13 +244,47 @@ function FlaggedCard() {
         Application Status
       </Text>
       {DIVIDER}
-      <Text style={{ fontSize: 26, fontWeight: "800", color: "#0f172a", marginBottom: 6 }}>
-        ~10 mins
+
+      {/* Summary row — always visible */}
+      <Text style={{ fontSize: 14, color: "#374151", lineHeight: 22, marginBottom: 10 }}>
+        Your application is being reviewed by our team.{" "}
+        <Text
+          style={{ color: "#3b82f6", fontWeight: "600" }}
+          onPress={() => setExpanded((v) => !v)}
+        >
+          {expanded ? "Show less ▲" : "Learn More ▼"}
+        </Text>
       </Text>
-      <Text style={{ fontSize: 14, color: "#374151", lineHeight: 22, marginBottom: 6 }}>
-        Your application has been flagged and is currently under review.{" "}
-        <Text style={{ color: "#3b82f6", fontWeight: "600" }}>Learn More</Text>
-      </Text>
+
+      {/* Inline expansion */}
+      {expanded && (
+        <View
+          style={{
+            backgroundColor: "#f8fafc",
+            borderRadius: 14,
+            padding: 16,
+            marginBottom: 16,
+          }}
+        >
+          <Text style={{ fontSize: 14, color: "#374151", lineHeight: 22, marginBottom: 18 }}>
+            Some applications need a closer look from our team. This usually happens when we want to verify a few details before making a decision — it's not a rejection, just a thorough check.
+          </Text>
+
+          <VerticalTracker />
+
+          <Text style={{ fontSize: 13, color: "#64748b", lineHeight: 19, marginBottom: 14 }}>
+            Most reviews complete within{" "}
+            <Text style={{ fontWeight: "600", color: "#0f172a" }}>1–2 business days</Text>.
+          </Text>
+
+          <TouchableOpacity activeOpacity={0.7} onPress={onSeeFullDetails}>
+            <Text style={{ fontSize: 14, color: "#3b82f6", fontWeight: "600" }}>
+              See full details →
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       <TouchableOpacity
         activeOpacity={0.85}
         style={{
@@ -194,7 +292,6 @@ function FlaggedCard() {
           borderRadius: 14,
           paddingVertical: 16,
           alignItems: "center",
-          marginTop: 14,
         }}
       >
         <Text style={{ color: "#fff", fontSize: 15, fontWeight: "600" }}>↑ Reupload documents</Text>
@@ -204,6 +301,8 @@ function FlaggedCard() {
 }
 
 export default function HomeScreen({ user }: Props) {
+  const [showReviewDetails, setShowReviewDetails] = useState(false);
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#cce3f5" }}>
       <ScrollView
@@ -226,8 +325,15 @@ export default function HomeScreen({ user }: Props) {
 
         {user.decision === "approved" && <ApprovedCard user={user} />}
         {user.decision === "denied" && <DeniedCard />}
-        {user.decision === "flagged_for_review" && <FlaggedCard />}
+        {user.decision === "flagged_for_review" && (
+          <FlaggedCard onSeeFullDetails={() => setShowReviewDetails(true)} />
+        )}
       </ScrollView>
+
+      <ReviewDetailsScreen
+        visible={showReviewDetails}
+        onClose={() => setShowReviewDetails(false)}
+      />
     </SafeAreaView>
   );
 }
