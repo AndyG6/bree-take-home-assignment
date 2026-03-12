@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Image, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { DemoUser } from "../../data/testData";
 import ReviewDetailsScreen from "./ReviewDetailsScreen";
+import AppealScreen from "./AppealScreen";
 
 interface Props {
   user: DemoUser;
@@ -132,7 +133,7 @@ function ApprovedCard({ user }: { user: DemoUser }) {
   );
 }
 
-function DeniedCard() {
+function DeniedCard({ onAppeal }: { onAppeal: () => void }) {
   return (
     <View
       style={{
@@ -156,7 +157,38 @@ function DeniedCard() {
       <Text style={{ fontSize: 14, color: "#64748b", lineHeight: 22, marginBottom: 16 }}>
         Our review considers factors like income consistency, account balance patterns, and repayment capacity — these don't always align on the first try.
       </Text>
-      <TouchableOpacity activeOpacity={0.7}>
+      <TouchableOpacity activeOpacity={0.7} onPress={onAppeal}>
+        <Text style={{ fontSize: 14, color: "#3b82f6", fontWeight: "600" }}>Appeal Now</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+function DeniedAfterReviewCard({ onAppeal }: { onAppeal: () => void }) {
+  return (
+    <View
+      style={{
+        backgroundColor: "#fff",
+        borderRadius: 20,
+        padding: 22,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 12,
+        elevation: 4,
+      }}
+    >
+      <Text style={{ fontSize: 13, fontWeight: "700", color: "#0f172a", letterSpacing: 0.3 }}>
+        Application Status
+      </Text>
+      {DIVIDER}
+      <Text style={{ fontSize: 15, fontWeight: "600", color: "#0f172a", lineHeight: 22, marginBottom: 8 }}>
+        Your application was reviewed and not approved.
+      </Text>
+      <Text style={{ fontSize: 14, color: "#64748b", lineHeight: 22, marginBottom: 16 }}>
+        A member of our team personally reviewed your documents. If your situation has changed or you'd like to request a different amount, you can appeal.
+      </Text>
+      <TouchableOpacity activeOpacity={0.7} onPress={onAppeal}>
         <Text style={{ fontSize: 14, color: "#3b82f6", fontWeight: "600" }}>Appeal Now</Text>
       </TouchableOpacity>
     </View>
@@ -302,6 +334,7 @@ function FlaggedCard({ onSeeFullDetails }: { onSeeFullDetails: () => void }) {
 
 export default function HomeScreen({ user }: Props) {
   const [showReviewDetails, setShowReviewDetails] = useState(false);
+  const [showAppeal, setShowAppeal] = useState(false);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#cce3f5" }}>
@@ -324,7 +357,12 @@ export default function HomeScreen({ user }: Props) {
         <CloudIllustration />
 
         {user.decision === "approved" && <ApprovedCard user={user} />}
-        {user.decision === "denied" && <DeniedCard />}
+        {user.decision === "denied" && (
+          <DeniedCard onAppeal={() => setShowAppeal(true)} />
+        )}
+        {user.decision === "denied_after_review" && (
+          <DeniedAfterReviewCard onAppeal={() => setShowAppeal(true)} />
+        )}
         {user.decision === "flagged_for_review" && (
           <FlaggedCard onSeeFullDetails={() => setShowReviewDetails(true)} />
         )}
@@ -333,6 +371,11 @@ export default function HomeScreen({ user }: Props) {
       <ReviewDetailsScreen
         visible={showReviewDetails}
         onClose={() => setShowReviewDetails(false)}
+      />
+      <AppealScreen
+        visible={showAppeal}
+        user={user}
+        onClose={() => setShowAppeal(false)}
       />
     </SafeAreaView>
   );

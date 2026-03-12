@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Easing,
@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { DemoUser } from "../data/testData";
+import AppealScreen from "./main/AppealScreen";
 
 interface Props {
   user: DemoUser;
@@ -382,8 +383,9 @@ function FlaggedScreen({ user, onStartOver, onEnterApp }: Props) {
   );
 }
 
-function DeniedScreen({ user, onStartOver, onEnterApp }: Props) {
+function DeniedScreen({ user, onStartOver }: Props) {
   const scaleAnim = useRef(new Animated.Value(0)).current;
+  const [showAppeal, setShowAppeal] = useState(false);
 
   useEffect(() => {
     Animated.spring(scaleAnim, {
@@ -446,7 +448,7 @@ function DeniedScreen({ user, onStartOver, onEnterApp }: Props) {
           line at this time.
         </Text>
 
-        {/* Info card */}
+        {/* What this means */}
         <View
           style={{
             backgroundColor: "#fff",
@@ -461,30 +463,16 @@ function DeniedScreen({ user, onStartOver, onEnterApp }: Props) {
             elevation: 3,
           }}
         >
-          <Text
-            style={{
-              fontSize: 15,
-              fontWeight: "700",
-              color: "#0f172a",
-              marginBottom: 10,
-            }}
-          >
+          <Text style={{ fontSize: 15, fontWeight: "700", color: "#0f172a", marginBottom: 10 }}>
             What this means
           </Text>
-          <Text
-            style={{
-              fontSize: 14,
-              color: "#475569",
-              lineHeight: 22,
-            }}
-          >
-            This decision is based on the information and documents you
-            provided. It doesn't affect your credit score, and you're welcome
-            to reapply in 30 days.
+          <Text style={{ fontSize: 14, color: "#475569", lineHeight: 22 }}>
+            This decision is based on the information and documents you provided.
+            It doesn't affect your credit score.
           </Text>
         </View>
 
-        {/* Next steps */}
+        {/* Appeal card */}
         <View
           style={{
             backgroundColor: "#fff",
@@ -499,84 +487,174 @@ function DeniedScreen({ user, onStartOver, onEnterApp }: Props) {
             elevation: 3,
           }}
         >
-          <Text
+          <Text style={{ fontSize: 15, fontWeight: "700", color: "#0f172a", marginBottom: 8 }}>
+            Think something was missed?
+          </Text>
+          <Text style={{ fontSize: 14, color: "#475569", lineHeight: 22, marginBottom: 16 }}>
+            If your documents have changed, you'd like to request a lower amount, or there's context the system couldn't capture — you can submit an appeal. Most appeals are reviewed within 1–2 business days.
+          </Text>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => setShowAppeal(true)}
             style={{
-              fontSize: 15,
-              fontWeight: "700",
-              color: "#0f172a",
-              marginBottom: 14,
+              backgroundColor: "#0f172a",
+              borderRadius: 14,
+              paddingVertical: 16,
+              alignItems: "center",
             }}
           >
-            What you can do next
-          </Text>
-          {[
-            {
-              icon: "📋",
-              title: "Check your documents",
-              body: "Make sure your pay stub and bank statement are current and legible.",
-            },
-            {
-              icon: "📅",
-              title: "Reapply in 30 days",
-              body: "Your financial picture may look different next month.",
-            },
-            {
-              icon: "💬",
-              title: "Contact support",
-              body: "Our team is happy to help you understand your options.",
-            },
-          ].map(({ icon, title, body }) => (
-            <View
-              key={title}
-              style={{
-                flexDirection: "row",
-                alignItems: "flex-start",
-                marginBottom: 16,
-              }}
-            >
-              <Text style={{ fontSize: 20, marginRight: 12, marginTop: 1 }}>
-                {icon}
-              </Text>
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={{
-                    fontSize: 14,
-                    fontWeight: "600",
-                    color: "#0f172a",
-                    marginBottom: 2,
-                  }}
-                >
-                  {title}
-                </Text>
-                <Text style={{ fontSize: 13, color: "#64748b", lineHeight: 18 }}>
-                  {body}
-                </Text>
-              </View>
-            </View>
-          ))}
+            <Text style={{ color: "#fff", fontSize: 15, fontWeight: "700" }}>
+              Appeal this decision
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          activeOpacity={0.85}
+        <TouchableOpacity onPress={onStartOver}>
+          <Text style={{ fontSize: 14, color: "#64748b" }}>← Back to demo</Text>
+        </TouchableOpacity>
+      </ScrollView>
+
+      <AppealScreen
+        visible={showAppeal}
+        user={user}
+        onClose={() => setShowAppeal(false)}
+      />
+    </SafeAreaView>
+  );
+}
+
+function DeniedAfterReviewScreen({ user, onStartOver, onEnterApp }: Props) {
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const [showAppeal, setShowAppeal] = useState(false);
+
+  useEffect(() => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      friction: 5,
+      tension: 80,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc" }}>
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          alignItems: "center",
+          paddingHorizontal: 24,
+          paddingTop: 48,
+          paddingBottom: 40,
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        <Animated.View
           style={{
-            backgroundColor: "#3b82f6",
-            borderRadius: 16,
-            paddingVertical: 18,
+            transform: [{ scale: scaleAnim }],
+            width: 100,
+            height: 100,
+            borderRadius: 50,
+            backgroundColor: "#e2e8f0",
             alignItems: "center",
-            width: "100%",
-            marginBottom: 16,
+            justifyContent: "center",
+            marginBottom: 28,
           }}
         >
-          <Text style={{ color: "#fff", fontSize: 17, fontWeight: "600" }}>
-            Contact Support
-          </Text>
-        </TouchableOpacity>
+          <Text style={{ fontSize: 44 }}>📋</Text>
+        </Animated.View>
 
+        <Text
+          style={{
+            fontSize: 26,
+            fontWeight: "800",
+            color: "#0f172a",
+            textAlign: "center",
+            marginBottom: 12,
+          }}
+        >
+          Review complete, {user.firstName}
+        </Text>
+        <Text
+          style={{
+            fontSize: 16,
+            color: "#475569",
+            textAlign: "center",
+            lineHeight: 24,
+            marginBottom: 32,
+          }}
+        >
+          Our team reviewed your application and we're unable to offer you a
+          credit line at this time.
+        </Text>
+
+        {/* What this means */}
+        <View
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: 20,
+            padding: 22,
+            width: "100%",
+            marginBottom: 20,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.06,
+            shadowRadius: 8,
+            elevation: 3,
+          }}
+        >
+          <Text style={{ fontSize: 15, fontWeight: "700", color: "#0f172a", marginBottom: 10 }}>
+            What this means
+          </Text>
+          <Text style={{ fontSize: 14, color: "#475569", lineHeight: 22 }}>
+            A member of our team personally reviewed your application and
+            documents. This decision doesn't affect your credit score.
+          </Text>
+        </View>
+
+        {/* Appeal card */}
+        <View
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: 20,
+            padding: 22,
+            width: "100%",
+            marginBottom: 24,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.06,
+            shadowRadius: 8,
+            elevation: 3,
+          }}
+        >
+          <Text style={{ fontSize: 15, fontWeight: "700", color: "#0f172a", marginBottom: 8 }}>
+            Think something was missed?
+          </Text>
+          <Text style={{ fontSize: 14, color: "#475569", lineHeight: 22, marginBottom: 16 }}>
+            If your situation has changed — updated documents, a different
+            amount, or context our team didn't have — you can submit an appeal.
+          </Text>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => setShowAppeal(true)}
+            style={{
+              backgroundColor: "#0f172a",
+              borderRadius: 14,
+              paddingVertical: 16,
+              alignItems: "center",
+            }}
+          >
+            <Text style={{ color: "#fff", fontSize: 15, fontWeight: "700" }}>
+              Appeal this decision
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* View account — available because they went through manual review */}
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={onEnterApp}
           style={{
-            backgroundColor: "#475569",
+            backgroundColor: "#3b82f6",
             borderRadius: 16,
             paddingVertical: 18,
             paddingHorizontal: 24,
@@ -585,6 +663,11 @@ function DeniedScreen({ user, onStartOver, onEnterApp }: Props) {
             justifyContent: "center",
             width: "100%",
             marginBottom: 16,
+            shadowColor: "#3b82f6",
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: 0.25,
+            shadowRadius: 12,
+            elevation: 4,
           }}
         >
           <Text style={{ color: "#fff", fontSize: 17, fontWeight: "600", marginRight: 8 }}>
@@ -594,11 +677,15 @@ function DeniedScreen({ user, onStartOver, onEnterApp }: Props) {
         </TouchableOpacity>
 
         <TouchableOpacity onPress={onStartOver}>
-          <Text style={{ fontSize: 14, color: "#64748b" }}>
-            ← Back to demo
-          </Text>
+          <Text style={{ fontSize: 14, color: "#64748b" }}>← Back to demo</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <AppealScreen
+        visible={showAppeal}
+        user={user}
+        onClose={() => setShowAppeal(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -610,5 +697,8 @@ export default function ResultScreen({ user, onStartOver, onEnterApp }: Props) {
   if (user.decision === "flagged_for_review") {
     return <FlaggedScreen user={user} onStartOver={onStartOver} onEnterApp={onEnterApp} />;
   }
-  return <DeniedScreen user={user} onStartOver={onStartOver} onEnterApp={onEnterApp} />;
+  if (user.decision === "denied_after_review") {
+    return <DeniedAfterReviewScreen user={user} onStartOver={onStartOver} onEnterApp={onEnterApp} />;
+  }
+  return <DeniedScreen user={user} onStartOver={onStartOver} />;
 }

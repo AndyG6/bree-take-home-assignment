@@ -17,9 +17,13 @@ function getInitials(name: string): string {
 }
 
 const DEMO_OPTIONS: { key: DemoUserKey; label: string; sub: string }[] = [
-  { key: "jane", label: "Jane Doe", sub: "$1,500 · Approved" },
-  { key: "bob", label: "Bob Smith", sub: "$2,000 · Denied" },
-  { key: "bob_flagged", label: "Bob Smith", sub: "$300 · Flagged" },
+  { key: "jane",         label: "Jane Doe",    sub: "$1,500 · Approved"           },
+  { key: "bob",          label: "Bob Smith",   sub: "$2,000 · Auto-denied"        },
+  { key: "bob_flagged",  label: "Bob Smith",   sub: "$300 · Flagged (pending)"    },
+  { key: "jane_flagged", label: "Jane Doe",    sub: "$4,500 · Flagged (pending)"  },
+  { key: "carol",        label: "Carol Tester",sub: "$1,000 · Flagged (no docs)"  },
+  { key: "dave",         label: "Dave Liar",   sub: "$2,000 · Denied (mismatch)"  },
+  { key: "bob_reviewed", label: "Bob Smith",   sub: "$300 · Denied after review"  },
 ];
 
 const GRID_ITEMS = [
