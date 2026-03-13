@@ -20,10 +20,9 @@ npm run dev:mobile   # Expo Go — scan the QR code
 **Admin:** Opens at `localhost:5173`. Defaults to the "Needs Review" tab, which auto-selects the first pending item.
 
 **Quirks to know:**
-- All data is hardcoded in `apps/mobile/data/testData.ts` (mobile) and inlined in `apps/admin/src/App.tsx` (admin). There's no persistence — refreshing resets state.
+- All data is hardcoded in `apps/mobile/data/testData.ts` (mobile) and inlined in `apps/admin/src/App.tsx` (admin).
 - The mobile app has 7 demo scenarios selectable from the landing screen or the Settings tab in the main app. Each one drives a different decision path.
 - Admin decisions (approve/deny) are in-memory only and reset on page refresh.
-- Drop `bree-logo.png` into `apps/admin/public/` to replace the logo placeholder.
 
 ---
 
