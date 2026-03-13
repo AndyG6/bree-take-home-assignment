@@ -3,7 +3,7 @@
 A prototype for an AI-powered loan application processor covering the full applicant submission flow (approve / flag / deny paths)
 
 **Loom walkthrough:** https://www.loom.com/share/e4c7b6ef39f04c29aa1ef0ab6c30815e
-https://www.loom.com/share/32085849d1fe41cebfa63908807d9290
+https://www.loom.com/share/e941a0dc1ed745019073b8a4be163c0e
 
 Explore the design thinking and decision-making behind every screen in the FigJam board:
 
