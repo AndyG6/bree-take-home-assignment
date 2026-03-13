@@ -10,6 +10,16 @@ interface BreakdownItem {
 
 type SystemDecision = "approved" | "denied" | "flagged_for_review";
 
+interface AppealData {
+  submittedAt: string;          // e.g. "Mar 8, 2026"
+  deniedAt: string;             // original denial date
+  deniedBy: string;             // "System (auto-denial)" | "Admin review"
+  denialReason: string;         // plain-language reason
+  adjustedAmount?: number;      // if applicant lowered the request
+  newDocuments?: string[];      // re-uploaded docs
+  contextText?: string;         // free-text the applicant wrote
+}
+
 interface Application {
   id: string;
   applicant: string;
@@ -21,6 +31,7 @@ interface Application {
   score: number;
   decision: SystemDecision;
   extractionError?: string;
+  appeal?: AppealData;
   breakdown: {
     income_verification: BreakdownItem;
     income_level: BreakdownItem;
@@ -61,6 +72,15 @@ const APPLICATIONS: Application[] = [
     documents: ["pay_stub_weak.pdf", "bank_statement_risky.pdf"],
     score: 31,
     decision: "denied",
+    appeal: {
+      submittedAt: "Mar 10, 2026",
+      deniedAt: "Mar 8, 2026",
+      deniedBy: "System (auto-denial)",
+      denialReason: "Requested amount exceeded 3x monthly income threshold. Account showed overdrafts and inconsistent deposits.",
+      adjustedAmount: 800,
+      newDocuments: ["bank_statement_healthy.pdf"],
+      contextText: "I've switched to direct deposit and my last 3 months have been stable. Lowered my request to better fit my income.",
+    },
     breakdown: {
       income_verification: { weight: 0.30, score: 40, note: "Documented income roughly matches but low confidence" },
       income_level:        { weight: 0.25, score: 0,  note: "Monthly income is 0.7x loan amount (below 3x threshold)" },
@@ -134,6 +154,14 @@ const APPLICATIONS: Application[] = [
     documents: ["pay_stub_weak.pdf"],
     score: 28,
     decision: "denied",
+    appeal: {
+      submittedAt: "Mar 11, 2026",
+      deniedAt: "Mar 9, 2026",
+      deniedBy: "System (auto-denial)",
+      denialReason: "Critical income mismatch: stated $10,000/mo but documents show $1,400/mo. Score of 28 is well below auto-deny threshold.",
+      newDocuments: ["pay_stub_strong.pdf", "bank_statement_healthy.pdf"],
+      contextText: "The previous pay stub was from a contract that ended. I've uploaded my new full-time employment documents.",
+    },
     breakdown: {
       income_verification: { weight: 0.30, score: 0,   note: "MISMATCH: Stated $10,000/mo, documented $1,400/mo (86% discrepancy)" },
       income_level:        { weight: 0.25, score: 0,   note: "Documented income is 0.7x loan amount" },
@@ -144,9 +172,11 @@ const APPLICATIONS: Application[] = [
   },
 ];
 
-const FLAGGED = APPLICATIONS.filter(a => a.decision === "flagged_for_review");
-const DENIED  = APPLICATIONS.filter(a => a.decision === "denied");
-const APPROVED = APPLICATIONS.filter(a => a.decision === "approved");
+const FLAGGED   = APPLICATIONS.filter(a => a.decision === "flagged_for_review");
+const APPEALS   = APPLICATIONS.filter(a => a.decision === "denied" && !!a.appeal);
+const NEEDS_REVIEW = [...FLAGGED, ...APPEALS]; // interleaved — both need a decision today
+const DENIED    = APPLICATIONS.filter(a => a.decision === "denied");
+const APPROVED  = APPLICATIONS.filter(a => a.decision === "approved");
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -382,18 +412,7 @@ function IconCheckBig({ size = 32, color = "currentColor" }: { size?: number; co
 
 function BreeLogo() {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      {/* ↓ Placeholder — swap this <svg> for the real Bree logo SVG */}
-      <div style={{
-        width: 28, height: 28, borderRadius: 8,
-        backgroundColor: "#3b82f6",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        flexShrink: 0,
-      }}>
-        <span style={{ fontSize: 14, fontWeight: 800, color: "#fff" }}>B</span>
-      </div>
-      <span style={{ fontSize: 18, fontWeight: 700, color: "#0f172a", letterSpacing: "-0.5px" }}>bree</span>
-    </div>
+    <img src="/bree-logo.png" alt="Bree" style={{ height: 28, objectFit: "contain" }} />
   );
 }
 
@@ -451,38 +470,38 @@ function StatusChip({ decision, adminDecision }: { decision: SystemDecision; adm
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
 
-type NavTab = "flagged" | "denied" | "approved" | "all";
+type NavTab = "needs_review" | "denied" | "approved" | "all";
 
 export const App: React.FC = () => {
-  const [activeNav, setActiveNav] = useState<NavTab>("flagged");
-  const [selectedId, setSelectedId] = useState<string>(FLAGGED[0]?.id ?? "");
+  const [activeNav, setActiveNav] = useState<NavTab>("needs_review");
+  const [selectedId, setSelectedId] = useState<string>(NEEDS_REVIEW[0]?.id ?? "");
   const [adminDecisions, setAdminDecisions] = useState<Record<string, "approved" | "denied">>({});
 
   const listItems: Application[] = (() => {
-    if (activeNav === "flagged")  return FLAGGED.filter(a => !adminDecisions[a.id]);
-    if (activeNav === "denied")   return DENIED;
-    if (activeNav === "approved") return APPROVED;
+    if (activeNav === "needs_review") return NEEDS_REVIEW.filter(a => !adminDecisions[a.id]);
+    if (activeNav === "denied")       return DENIED;
+    if (activeNav === "approved")     return APPROVED;
     return APPLICATIONS;
   })();
 
   const selectedApp = APPLICATIONS.find(a => a.id === selectedId) ?? null;
   const adminDecision = selectedId ? adminDecisions[selectedId] : undefined;
 
-  const pendingCount = FLAGGED.filter(a => !adminDecisions[a.id]).length;
+  const pendingCount = NEEDS_REVIEW.filter(a => !adminDecisions[a.id]).length;
 
   function handleDecide(id: string, decision: "approved" | "denied") {
     setAdminDecisions(prev => ({ ...prev, [id]: decision }));
-    if (activeNav === "flagged") {
-      const remaining = FLAGGED.filter(a => a.id !== id && !adminDecisions[a.id]);
+    if (activeNav === "needs_review") {
+      const remaining = NEEDS_REVIEW.filter(a => a.id !== id && !adminDecisions[a.id]);
       if (remaining.length > 0) setSelectedId(remaining[0].id);
     }
   }
 
   function switchNav(tab: NavTab) {
     setActiveNav(tab);
-    const items = tab === "flagged"  ? FLAGGED.filter(a => !adminDecisions[a.id])
-                : tab === "denied"   ? DENIED
-                : tab === "approved" ? APPROVED
+    const items = tab === "needs_review" ? NEEDS_REVIEW.filter(a => !adminDecisions[a.id])
+                : tab === "denied"       ? DENIED
+                : tab === "approved"     ? APPROVED
                 : APPLICATIONS;
     if (items.length > 0) setSelectedId(items[0].id);
   }
@@ -520,10 +539,10 @@ export const App: React.FC = () => {
           />
           <NavItem
             icon={<IconFlag />}
-            label="Flagged"
-            active={activeNav === "flagged"}
+            label="Needs Review"
+            active={activeNav === "needs_review"}
             badge={pendingCount}
-            onClick={() => switchNav("flagged")}
+            onClick={() => switchNav("needs_review")}
           />
           <NavItem
             icon={<IconXCircle />}
@@ -607,13 +626,13 @@ export const App: React.FC = () => {
           borderBottom: "1px solid #f1f5f9",
         }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: "#0f172a", marginBottom: 2 }}>
-            {activeNav === "flagged"  ? "Flagged Reviews"
-           : activeNav === "denied"  ? "Denied"
-           : activeNav === "approved" ? "Accepted"
+            {activeNav === "needs_review" ? "Needs Review"
+           : activeNav === "denied"       ? "Denied"
+           : activeNav === "approved"     ? "Accepted"
            : "All Applications"}
           </div>
           <div style={{ fontSize: 12, color: "#94a3b8" }}>
-            {listItems.length} {activeNav === "flagged" ? "pending" : "application"}{listItems.length !== 1 ? "s" : ""}
+            {listItems.length} {activeNav === "needs_review" ? "pending" : "application"}{listItems.length !== 1 ? "s" : ""}
           </div>
         </div>
 
@@ -630,7 +649,9 @@ export const App: React.FC = () => {
 
           {listItems.map(app => {
             const active = selectedId === app.id;
-            const sc = scoreColor(app.score);
+            const isAppeal = !!app.appeal;
+            // Appeals use blue score circle; fresh flags use the score-based color
+            const sc = isAppeal ? "#3b82f6" : scoreColor(app.score);
             const adminD = adminDecisions[app.id];
             return (
               <div
@@ -648,10 +669,12 @@ export const App: React.FC = () => {
                   <div>
                     <div style={{ fontSize: 14, fontWeight: 600, color: "#0f172a" }}>{app.applicant}</div>
                     <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 1 }}>
-                      {app.id} · ${app.loanAmount.toLocaleString()}
+                      {app.id} · ${isAppeal && app.appeal?.adjustedAmount
+                        ? app.appeal.adjustedAmount.toLocaleString()
+                        : app.loanAmount.toLocaleString()}
                     </div>
                   </div>
-                  {/* Score badge */}
+                  {/* Score badge — blue for appeals, score-color for fresh flags */}
                   <div style={{
                     fontSize: 14, fontWeight: 800, color: sc,
                     backgroundColor: `${sc}18`,
@@ -662,8 +685,19 @@ export const App: React.FC = () => {
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <StatusChip decision={app.decision} adminDecision={adminD} />
-                  {app.extractionError && (
+                  {isAppeal ? (
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#2563eb", backgroundColor: "#dbeafe", borderRadius: 20, padding: "2px 10px" }}>
+                      Appeal
+                    </span>
+                  ) : (
+                    <StatusChip decision={app.decision} adminDecision={adminD} />
+                  )}
+                  {isAppeal && app.appeal && (
+                    <span style={{ fontSize: 11, color: "#94a3b8" }}>
+                      Denied {app.appeal.deniedAt}
+                    </span>
+                  )}
+                  {!isAppeal && app.extractionError && (
                     <span style={{ fontSize: 11, fontWeight: 600, color: "#ea580c", backgroundColor: "#fff7ed", borderRadius: 20, padding: "2px 8px" }}>
                       No docs
                     </span>
@@ -699,10 +733,19 @@ export const App: React.FC = () => {
                 <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 3 }}>
                   <span style={{ fontSize: 18, fontWeight: 700, color: "#0f172a" }}>{selectedApp.applicant}</span>
                   <span style={{ fontSize: 12, color: "#94a3b8" }}>{selectedApp.id}</span>
-                  <StatusChip decision={selectedApp.decision} adminDecision={adminDecision} />
+                  {selectedApp.appeal
+                    ? <span style={{ fontSize: 11, fontWeight: 600, color: "#2563eb", backgroundColor: "#dbeafe", borderRadius: 20, padding: "2px 10px" }}>Appeal</span>
+                    : <StatusChip decision={selectedApp.decision} adminDecision={adminDecision} />}
                 </div>
                 <div style={{ fontSize: 13, color: "#64748b" }}>
-                  <strong style={{ color: "#374151" }}>${selectedApp.loanAmount.toLocaleString()}</strong> requested ·{" "}
+                  {selectedApp.appeal?.adjustedAmount ? (
+                    <>
+                      <span style={{ color: "#6b7280", textDecoration: "line-through", marginRight: 4 }}>${selectedApp.loanAmount.toLocaleString()}</span>
+                      <strong style={{ color: "#2563eb" }}>${selectedApp.appeal.adjustedAmount.toLocaleString()}</strong> requested ·{" "}
+                    </>
+                  ) : (
+                    <><strong style={{ color: "#374151" }}>${selectedApp.loanAmount.toLocaleString()}</strong> requested · </>
+                  )}
                   <strong style={{ color: "#374151" }}>${selectedApp.monthlyIncome.toLocaleString()}</strong>/mo income ·{" "}
                   {selectedApp.employmentStatus}
                 </div>
@@ -772,6 +815,83 @@ export const App: React.FC = () => {
 
             {/* Detail body */}
             <div style={{ padding: "24px 28px", display: "flex", flexDirection: "column", gap: 20 }}>
+
+              {/* ── Prior Decision (appeals only) ── */}
+              {selectedApp.appeal && (
+                <div style={{
+                  backgroundColor: "#fff",
+                  borderRadius: 16, border: "1px solid #e2e8f0",
+                  padding: "20px 22px",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+                }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase" as const, letterSpacing: "0.1em", marginBottom: 16 }}>
+                    Prior Decision
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "14px 20px", marginBottom: 14 }}>
+                    {[
+                      { label: "Denied By",      value: selectedApp.appeal.deniedBy },
+                      { label: "Denied On",      value: selectedApp.appeal.deniedAt },
+                      { label: "Original Score", value: String(selectedApp.score) },
+                    ].map(({ label, value }) => (
+                      <div key={label}>
+                        <div style={{ fontSize: 11, color: "#94a3b8", textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: 4 }}>{label}</div>
+                        <div style={{ fontSize: 14, color: "#0f172a", fontWeight: 500 }}>{value}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ backgroundColor: "#fef2f2", border: "1px solid #fecaca", borderRadius: 10, padding: "10px 14px" }}>
+                    <div style={{ fontSize: 11, color: "#94a3b8", textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: 4 }}>Denial Reason</div>
+                    <div style={{ fontSize: 13, color: "#7f1d1d" }}>{selectedApp.appeal.denialReason}</div>
+                  </div>
+                </div>
+              )}
+
+              {/* ── What's New (appeals only) ── */}
+              {selectedApp.appeal && (
+                <div style={{
+                  backgroundColor: "#fff",
+                  borderRadius: 16, border: "1px solid #bfdbfe",
+                  padding: "20px 22px",
+                  boxShadow: "0 1px 4px rgba(59,130,246,0.08)",
+                }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "#3b82f6", textTransform: "uppercase" as const, letterSpacing: "0.1em", marginBottom: 16 }}>
+                    What's New
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column" as const, gap: 14 }}>
+                    {selectedApp.appeal.adjustedAmount && (
+                      <div>
+                        <div style={{ fontSize: 11, color: "#94a3b8", textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: 4 }}>Adjusted Amount</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <span style={{ fontSize: 14, color: "#6b7280", textDecoration: "line-through" }}>${selectedApp.loanAmount.toLocaleString()}</span>
+                          <span style={{ fontSize: 14, color: "#94a3b8" }}>→</span>
+                          <span style={{ fontSize: 16, fontWeight: 700, color: "#2563eb" }}>${selectedApp.appeal.adjustedAmount.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    )}
+                    {selectedApp.appeal.newDocuments && selectedApp.appeal.newDocuments.length > 0 && (
+                      <div>
+                        <div style={{ fontSize: 11, color: "#94a3b8", textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: 8 }}>Re-uploaded Documents</div>
+                        <div style={{ display: "flex", flexDirection: "column" as const, gap: 6 }}>
+                          {selectedApp.appeal.newDocuments.map(doc => (
+                            <div key={doc} style={{ display: "flex", alignItems: "center", gap: 8, backgroundColor: "#eff6ff", borderRadius: 8, padding: "8px 12px" }}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                              <span style={{ fontSize: 13, color: "#1d4ed8", fontWeight: 500 }}>{cleanDoc(doc)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {selectedApp.appeal.contextText && (
+                      <div>
+                        <div style={{ fontSize: 11, color: "#94a3b8", textTransform: "uppercase" as const, letterSpacing: "0.08em", marginBottom: 6 }}>Applicant's Note</div>
+                        <div style={{ fontSize: 13, color: "#374151", lineHeight: 1.55, backgroundColor: "#f8fafc", borderRadius: 8, padding: "10px 14px", borderLeft: "3px solid #3b82f6" }}>
+                          "{selectedApp.appeal.contextText}"
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Application facts card */}
               <div style={{

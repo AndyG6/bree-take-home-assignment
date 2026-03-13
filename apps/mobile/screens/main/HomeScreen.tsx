@@ -380,7 +380,7 @@ function VerticalTracker() {
 }
 
 function FlaggedCard({ onSeeFullDetails }: { onSeeFullDetails: () => void }) {
-  const [expanded, setExpanded] = useState(false);
+  const [contextVisible, setContextVisible] = useState(false);
 
   return (
     <View
@@ -400,44 +400,47 @@ function FlaggedCard({ onSeeFullDetails }: { onSeeFullDetails: () => void }) {
       </Text>
       {DIVIDER}
 
-      {/* Summary row — always visible */}
-      <Text style={{ fontSize: 14, color: "#374151", lineHeight: 22, marginBottom: 10 }}>
-        Your application is being reviewed by our team.{" "}
-        <Text
-          style={{ color: "#3b82f6", fontWeight: "600" }}
-          onPress={() => setExpanded((v) => !v)}
-        >
-          {expanded ? "Show less ▲" : "Learn More ▼"}
+      {/* Status tracker — always visible */}
+      <VerticalTracker />
+
+      {/* Time estimate — always visible */}
+      <View
+        style={{
+          backgroundColor: "#eff6ff",
+          borderRadius: 10,
+          paddingVertical: 10,
+          paddingHorizontal: 14,
+          marginBottom: 16,
+        }}
+      >
+        <Text style={{ fontSize: 13, color: "#1d4ed8", lineHeight: 19 }}>
+          Your application will be complete in{" "}
+          <Text style={{ fontWeight: "700" }}>~2 business days</Text>.
         </Text>
-      </Text>
+      </View>
 
-      {/* Inline expansion */}
-      {expanded && (
-        <View
-          style={{
-            backgroundColor: "#f8fafc",
-            borderRadius: 14,
-            padding: 16,
-            marginBottom: 16,
-          }}
-        >
-          <Text style={{ fontSize: 14, color: "#374151", lineHeight: 22, marginBottom: 18 }}>
-            Some applications need a closer look from our team. This usually happens when we want to verify a few details before making a decision — it's not a rejection, just a thorough check.
-          </Text>
+      {/* See full details link — always visible */}
+      <TouchableOpacity activeOpacity={0.7} onPress={onSeeFullDetails} style={{ marginBottom: 18 }}>
+        <Text style={{ fontSize: 14, color: "#3b82f6", fontWeight: "600" }}>
+          See full details →
+        </Text>
+      </TouchableOpacity>
 
-          <VerticalTracker />
+      {/* Explanatory context — collapsible (supplementary on repeat visits) */}
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={() => setContextVisible((v) => !v)}
+        style={{ marginBottom: contextVisible ? 10 : 18 }}
+      >
+        <Text style={{ fontSize: 13, color: "#94a3b8" }}>
+          {contextVisible ? "Hide explanation ▲" : "Why is my application being reviewed? ▼"}
+        </Text>
+      </TouchableOpacity>
 
-          <Text style={{ fontSize: 13, color: "#64748b", lineHeight: 19, marginBottom: 14 }}>
-            Most reviews complete within{" "}
-            <Text style={{ fontWeight: "600", color: "#0f172a" }}>1–2 business days</Text>.
-          </Text>
-
-          <TouchableOpacity activeOpacity={0.7} onPress={onSeeFullDetails}>
-            <Text style={{ fontSize: 14, color: "#3b82f6", fontWeight: "600" }}>
-              See full details →
-            </Text>
-          </TouchableOpacity>
-        </View>
+      {contextVisible && (
+        <Text style={{ fontSize: 14, color: "#64748b", lineHeight: 22, marginBottom: 18 }}>
+          Some applications need a closer look from our team. This usually happens when we want to verify a few details before making a decision — it's not a rejection, just a thorough check.
+        </Text>
       )}
 
       <TouchableOpacity
