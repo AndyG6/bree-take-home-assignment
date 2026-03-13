@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -497,6 +497,26 @@ export const App: React.FC = () => {
     }
   }
 
+  // N = next item in queue, A = approve selected, D = deny selected
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    // Don't fire shortcuts when typing in an input
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+    const key = e.key.toLowerCase();
+    if (key === "a" && selectedApp && !adminDecision) {
+      handleDecide(selectedApp.id, "approved");
+    } else if (key === "d" && selectedApp && !adminDecision) {
+      handleDecide(selectedApp.id, "denied");
+    } else if (key === "n") {
+      const pending = listItems.filter(a => a.id !== selectedId);
+      if (pending.length > 0) setSelectedId(pending[0].id);
+    }
+  }, [selectedApp, adminDecision, listItems, selectedId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [handleKeyDown]);
+
   function switchNav(tab: NavTab) {
     setActiveNav(tab);
     const items = tab === "needs_review" ? NEEDS_REVIEW.filter(a => !adminDecisions[a.id])
@@ -777,7 +797,26 @@ export const App: React.FC = () => {
                   </button>
                 </div>
               ) : (
-                <div style={{ display: "flex", gap: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  {/* Keyboard shortcut legend */}
+                  <div style={{ display: "flex", gap: 6, marginRight: 4 }}>
+                    {[
+                      { key: "A", label: "Approve" },
+                      { key: "D", label: "Deny" },
+                      { key: "N", label: "Next" },
+                    ].map(({ key, label }) => (
+                      <div key={key} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#94a3b8" }}>
+                        <kbd style={{
+                          fontSize: 10, fontWeight: 700, color: "#64748b",
+                          backgroundColor: "#f1f5f9", border: "1px solid #e2e8f0",
+                          borderBottom: "2px solid #e2e8f0",
+                          borderRadius: 4, padding: "2px 6px",
+                          fontFamily: "monospace",
+                        }}>{key}</kbd>
+                        <span>{label}</span>
+                      </div>
+                    ))}
+                  </div>
                   <button
                     onClick={() => handleDecide(selectedApp.id, "denied")}
                     style={{
